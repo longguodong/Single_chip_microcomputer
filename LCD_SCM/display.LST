@@ -1,0 +1,421 @@
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DISPLAY
+OBJECT MODULE PLACED IN display.OBJ
+COMPILER INVOKED BY: D:\专业软件安装\keil\C51\BIN\C51.EXE display.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include "delay.h"
+   3          #include "display.h"
+   4          #include "keybord.h"
+   5          #include "ds1302.h"
+   6          #include "ds18b20.h"
+   7          #include"lcd.h"
+   8          sbit KEY4=P3^3;
+   9          sbit KEY5=P3^2;
+  10          sbit KEY7=P3^0;  
+  11          long tempdate,tem_f_d; //温度
+  12          int Tim=0,Ser_com[14]; //串口数据传输
+  13          unsigned  int  flag=1;position=1; 
+  14          unsigned char  j,pl=0;
+  15          unsigned char  disp[14];
+  16          unsigned char  bj[6]={0,0,0,0,0,0};
+  17          unsigned char  keym1,keym2,keym3,keym4,keym5,keym6;
+  18          unsigned char  second,minute,hour,day,month,year;
+  19          unsigned char  ds1302_ad_w[6]=
+  20          {
+  21             0x80,0x82,0x84,0x86,0x88,0x8c
+  22          };
+  23          
+  24          
+  25          
+  26          /*****************************************************************
+  27             LCD初始界面的值
+  28          ****************************************************************/
+  29          void Lcdstart()
+  30          {        
+  31   1               LcdWriteCom(0X80);
+  32   1               LcdWriteData(0X30+2);
+  33   1               LcdWriteData(0X30+0);
+  34   1               LcdWriteData(0X30+0);
+  35   1               LcdWriteData(0X30+0);
+  36   1               LcdWriteData('-');
+  37   1               LcdWriteData(0X30+0);
+  38   1               LcdWriteData(0X30+0);
+  39   1               LcdWriteData('-');
+  40   1               LcdWriteData(0X30+0);
+  41   1               LcdWriteData(0X30+0);
+  42   1                      
+  43   1               LcdWriteCom(0X80+0x40);
+  44   1               LcdWriteData(0X30+0);
+  45   1               LcdWriteData(0X30+0);
+  46   1               LcdWriteData('-');
+  47   1               LcdWriteData(0X30+0);
+  48   1               LcdWriteData(0X30+0);
+  49   1               LcdWriteData('-');
+  50   1               LcdWriteData(0X30+0);
+  51   1               LcdWriteData(0X30+0);
+  52   1               LcdWriteCom(0xc0); 
+  53   1      }
+  54          
+  55          
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 2   
+
+  56          /*****************************************************************
+  57             初始时钟启动
+  58          ****************************************************************/
+  59          void Star_1302()
+  60          {  
+  61   1              for(j=0;j<6;j++)
+  62   1         Ds1302_Single_Byte_Write(ds1302_ad_w[j],0x00);
+  63   1      
+  64   1      }
+  65          
+  66          
+  67           /*****************************************************************
+  68             所有时间的读取
+  69          ****************************************************************/
+  70           void all_t_read()
+  71           {
+  72   1          Ds1302_Single_Byte_Write(0x8e,0x00);
+  73   1              second=Ds1302_Single_Byte_Read(0x81);
+  74   1              disp[0]=second%16;
+  75   1              disp[1]=second/16;
+  76   1              Ds1302_Single_Byte_Write(0x8e,0x00);
+  77   1              minute=Ds1302_Single_Byte_Read(0x83);
+  78   1              disp[2]=16;
+  79   1              disp[3]=minute%16;
+  80   1              disp[4]=minute/16;
+  81   1              Ds1302_Single_Byte_Write(0x8e,0x00);
+  82   1              hour=Ds1302_Single_Byte_Read(0x85);
+  83   1              disp[5]=16;
+  84   1              disp[6]=hour%16;
+  85   1              disp[7]=hour/16;
+  86   1               Ds1302_Single_Byte_Write(0x8e,0x00);
+  87   1           day=Ds1302_Single_Byte_Read(0x87);
+  88   1               disp[8]=day%16;
+  89   1               disp[9]=day/16;
+  90   1               Ds1302_Single_Byte_Write(0x8e,0x00);
+  91   1               month=Ds1302_Single_Byte_Read(0x89);
+  92   1               disp[10]=month%16;
+  93   1               disp[11]=month/16;
+  94   1               Ds1302_Single_Byte_Write(0x8e,0x00);
+  95   1               year=Ds1302_Single_Byte_Read(0x8d);
+  96   1               disp[12]=year%16;
+  97   1               disp[13]=year/16;
+  98   1               LcdWriteCom(0X80);
+  99   1      //         LcdWriteCom(0X08);//实现闪烁的效果
+ 100   1      //         Delay1ms(1000);
+ 101   1      //          LcdWriteCom(0X0c);
+ 102   1               LcdWriteData(0X30+2);
+ 103   1               LcdWriteData(0X30+0);
+ 104   1               LcdWriteData(0X30+disp[13]);
+ 105   1               LcdWriteData(0X30+disp[12]);
+ 106   1               LcdWriteData('-');
+ 107   1               LcdWriteData(0X30+disp[11]);
+ 108   1               LcdWriteData(0X30+disp[10]);
+ 109   1               LcdWriteData('-');
+ 110   1               LcdWriteData(0X30+disp[9]);
+ 111   1               LcdWriteData(0X30+disp[8]);
+ 112   1      
+ 113   1               LcdWriteCom(0X80+0x40);
+ 114   1               LcdWriteData(0X30+disp[7]);
+ 115   1               LcdWriteData(0X30+disp[6]);
+ 116   1               LcdWriteData('-');
+ 117   1               LcdWriteData(0X30+disp[4]);
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 3   
+
+ 118   1               LcdWriteData(0X30+disp[3]);
+ 119   1               LcdWriteData('-');
+ 120   1               LcdWriteData(0X30+disp[1]);
+ 121   1               LcdWriteData(0X30+disp[0]);
+ 122   1      
+ 123   1               LcdWriteCom(0xc0); 
+ 124   1      
+ 125   1       }
+ 126          
+ 127          
+ 128          
+ 129          /*****************************************************************
+ 130             LCD位选显示
+ 131          ****************************************************************/
+ 132           void posi_show()
+ 133           {
+ 134   1           LcdWriteCom(0X80);
+ 135   1               LcdWriteData(0X30+2);
+ 136   1               LcdWriteData(0X30+0);
+ 137   1               LcdWriteData(0X30+keym6/10);
+ 138   1               LcdWriteData(0X30+keym6%10);
+ 139   1               LcdWriteData('-');
+ 140   1               LcdWriteData(0X30+keym5/10);
+ 141   1               LcdWriteData(0X30+keym5%10);
+ 142   1               LcdWriteData('-');
+ 143   1               LcdWriteData(0X30+keym4/10);
+ 144   1               LcdWriteData(0X30+keym4%10);
+ 145   1      
+ 146   1               LcdWriteCom(0X80+0x40);
+ 147   1               LcdWriteData(0X30+keym3/10);
+ 148   1               LcdWriteData(0X30+keym3%10);
+ 149   1               LcdWriteData('-');
+ 150   1               LcdWriteData(0X30+keym2/10);
+ 151   1               LcdWriteData(0X30+keym2%10);
+ 152   1               LcdWriteData('-');
+ 153   1               LcdWriteData(0X30+keym1/10);
+ 154   1               LcdWriteData(0X30+keym1%10);
+ 155   1               LcdWriteCom(0xc0);     
+ 156   1              
+ 157   1         
+ 158   1       }
+ 159          
+ 160          /*****************************************************************
+ 161             LCD温度的显示
+ 162          ****************************************************************/
+ 163          void Temp_show()
+ 164          {
+ 165   1            tempdate=Get_Tmp();
+ 166   1                LcdWriteCom(0X80+0x40+0x0b);
+ 167   1                LcdWriteData(0X30+tempdate/100);
+ 168   1                LcdWriteData(0X30+(tempdate%100)/10);
+ 169   1                LcdWriteData('.');
+ 170   1                LcdWriteData(0X30+tempdate%100%10);
+ 171   1                LcdWriteData('C');
+ 172   1                LcdWriteCom(0xc0);    
+ 173   1       
+ 174   1      }
+ 175          
+ 176           /*****************************************************************
+ 177           蜂鸣器和电机的开断
+ 178          ****************************************************************/
+ 179          void Buz_ele_on()
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 4   
+
+ 180          {
+ 181   1          tem_f_d=Get_Tmp();
+ 182   1        if(((tem_f_d/100)*10+(tem_f_d%100/10))>=25)
+ 183   1               {
+ 184   2                 P2=(P2&=0x1f)|0xb0; // P2选择Y5锁存器
+ 185   2             P0=0x6f;  //0xaf=0110 1111
+ 186   2                 P2&=0x1f;
+ 187   2               }
+ 188   1               else
+ 189   1               {
+ 190   2                P2=(P2&=0x1f)|0xb0; // P2选择Y5锁存器
+ 191   2            P0=0x0f;  //0xaf=1010 1111
+ 192   2                P2&=0x1f; 
+ 193   2               }
+ 194   1      
+ 195   1      }
+ 196          
+ 197           /*****************************************************************
+ 198             串行口中断调时间
+ 199          ****************************************************************/
+ 200          void Seri_Comm()
+ 201          {        
+ 202   1           unsigned char serial[6],sm=1;
+ 203   1               for(j=0;j<6;j++)
+ 204   1               { 
+ 205   2                   
+ 206   2                     serial[j]=Ser_com[j+sm]*10+Ser_com[j+sm+1];
+ 207   2                     Ds1302_Single_Byte_Write(ds1302_ad_w[5-j],((serial[j]/10)<<4|(serial[j]%10)));
+ 208   2                         sm++;
+ 209   2                         if(sm==7)
+ 210   2                           sm=1;
+ 211   2               }
+ 212   1      }
+ 213          
+ 214          
+ 215          
+ 216          
+ 217          
+ 218          
+ 219          
+ 220          
+ 221          /*****************************************************************
+ 222             LCD显示的时钟
+ 223          ****************************************************************/
+ 224          void disp_lcd()
+ 225          {       
+ 226   1           if(KEY4==0)
+ 227   1              {
+ 228   2             Delay1ms(40);
+ 229   2                 while(KEY4==0)
+ 230   2                {
+ 231   3                   while(KEY4==0);
+ 232   3                         flag++;
+ 233   3                       if(flag==3)
+ 234   3                         flag=1; 
+ 235   3                 }
+ 236   2               }
+ 237   1      
+ 238   1      
+ 239   1      
+ 240   1      //主显示区
+ 241   1       if(flag==1)
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 5   
+
+ 242   1       {
+ 243   2         all_t_read();
+ 244   2         if(KEY5==0)
+ 245   2         Seri_Comm();
+ 246   2         position=1;
+ 247   2      
+ 248   2      
+ 249   2        }    
+ 250   1      
+ 251   1       if(flag==2)
+ 252   1       {
+ 253   2               //调时间位选
+ 254   2               if(KEY5==0)
+ 255   2              {
+ 256   3             Delay1ms(40);
+ 257   3                 while(KEY5==0)
+ 258   3                {
+ 259   4                   while(KEY5==0);
+ 260   4                         position++;
+ 261   4                       if(position==8)
+ 262   4                         position=1; 
+ 263   4                 }
+ 264   3               }
+ 265   2       //调秒位，位选
+ 266   2         if(position==1)
+ 267   2         { 
+ 268   3               keym1=key1();
+ 269   3               bj[0]=keym1;
+ 270   3           posi_show();
+ 271   3               Delay1ms(30);
+ 272   3               LcdWriteCom(0X80+0x40+0x06);
+ 273   3               LcdWriteData(0X30+0xff);
+ 274   3               LcdWriteData(0X30+0xff);
+ 275   3               LcdWriteCom(0Xc0);  
+ 276   3               
+ 277   3              }
+ 278   2      //调分钟位，位选
+ 279   2              if(position==2)
+ 280   2              { 
+ 281   3               keym2=key2();
+ 282   3               bj[1]=keym2;  
+ 283   3           posi_show(); 
+ 284   3               Delay1ms(30);
+ 285   3               LcdWriteCom(0X80+0x40+0x03);
+ 286   3               LcdWriteData(0X30+0xff);
+ 287   3               LcdWriteData(0X30+0xff);
+ 288   3               LcdWriteCom(0Xc0); 
+ 289   3              }
+ 290   2      
+ 291   2      //调小时位，位选
+ 292   2                      if(position==3)
+ 293   2              { 
+ 294   3               keym3=key3();
+ 295   3               bj[2]=keym3;  
+ 296   3               posi_show();
+ 297   3               Delay1ms(30);
+ 298   3               LcdWriteCom(0X80+0x40);
+ 299   3               LcdWriteData(0X30+0xff);
+ 300   3               LcdWriteData(0X30+0xff);
+ 301   3               LcdWriteCom(0Xc0); 
+ 302   3      }
+ 303   2      
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 6   
+
+ 304   2              //调日，位选
+ 305   2        if(position==4)
+ 306   2              {
+ 307   3                  keym4=key4();
+ 308   3                  bj[3]=keym4;
+ 309   3              posi_show(); 
+ 310   3                      LcdWriteCom(0X80+0x08);
+ 311   3                      LcdWriteData(0X30+0xff);
+ 312   3                  LcdWriteData(0X30+0xff);
+ 313   3                      LcdWriteCom(0Xc0);      
+ 314   3               }  
+ 315   2      
+ 316   2      
+ 317   2         //调月，位选
+ 318   2        if(position==5)
+ 319   2              {
+ 320   3                  keym5=key5();
+ 321   3                  bj[4]=keym5;
+ 322   3              posi_show();
+ 323   3                      LcdWriteCom(0X80+0x05);
+ 324   3                      LcdWriteData(0X30+0xff);
+ 325   3                  LcdWriteData(0X30+0xff);
+ 326   3                      LcdWriteCom(0Xc0);      
+ 327   3                               
+ 328   3               }  
+ 329   2      
+ 330   2                //调年，位选
+ 331   2        if(position==6)
+ 332   2              {
+ 333   3                  keym6=key6();
+ 334   3                  bj[5]=keym6;
+ 335   3              posi_show();
+ 336   3                      LcdWriteCom(0X80);
+ 337   3                      LcdWriteData(0X30+0xff);
+ 338   3                  LcdWriteData(0X30+0xff);
+ 339   3                  LcdWriteData(0X30+0xff);
+ 340   3                  LcdWriteData(0X30+0xff);
+ 341   3                      LcdWriteCom(0Xc0);      
+ 342   3               }
+ 343   2      
+ 344   2               //确认时间，并显示
+ 345   2      //  if(position==7&&KEY4==0)
+ 346   2          if(position==7&&KEY7==0)
+ 347   2               {     //       秒，分，时,日，月，年
+ 348   3      //         if(KEY4==0)
+ 349   3      //         {
+ 350   3      //           while(KEY4==0)
+ 351   3      //              { 
+ 352   3      //                         Delay1ms(30);
+ 353   3      //                         while(KEY4==0);
+ 354   3      //                         pl++;
+ 355   3      //                         if(pl==2)
+ 356   3      //                         pl=1;
+ 357   3      //               }
+ 358   3      //         }
+ 359   3      //         if(pl==1)
+ 360   3      //         {
+ 361   3                    for(j=0;j<6;j++)
+ 362   3               Ds1302_Single_Byte_Write(ds1302_ad_w[j],((bj[j]/10)<<4|(bj[j]%10)));
+ 363   3      //         }
+ 364   3                 }
+ 365   2      
+C51 COMPILER V9.01   DISPLAY                                                               11/29/2017 13:04:52 PAGE 7   
+
+ 366   2       }
+ 367   1       }      
+ 368          
+ 369          
+ 370          
+ 371          
+ 372          
+ 373           void Serial_Com(void) interrupt 4
+ 374          {
+ 375   1        if(RI==1)
+ 376   1        {
+ 377   2          RI=0;
+ 378   2              Ser_com[Tim]=SBUF-0x30;
+ 379   2              Tim++;
+ 380   2         if(Tim==13)
+ 381   2         {
+ 382   3              Tim=1;
+ 383   3              }
+ 384   2      
+ 385   2        }
+ 386   1      } 
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1510    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     82       7
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,12 @@
+"STARTUP.obj",
+"main.obj",
+"delay.obj",
+"scq.obj",
+"ds18b20.obj",
+"display.obj",
+"keybord.obj",
+"ds1302.obj",
+"iic.obj",
+"lcd.obj" 
+TO "lanqiaobei" 
+RAMSIZE(256) 
